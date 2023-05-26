@@ -19,7 +19,7 @@ export default function FileRow({
     setModal(!modal);
   };
 
-  const annotationsData = item.annotations.map((item, index) => {
+  const annotationsData = item?.annotations?.map((item, index) => {
     const deepItemCopy = JSON.parse(JSON.stringify(item));
     delete deepItemCopy['core:sample_start'];
     delete deepItemCopy['core:sample_count'];
@@ -51,7 +51,7 @@ export default function FileRow({
         <>
           <td>
             <Link
-              to={'spectrogram/' + item.name.replace('.sigmf-meta', '')}
+              to={'spectrogram/' + item?.name?.replace('.sigmf-meta', '')}
               onClick={() => {
                 updateConnectionMetaFileHandle(item.metaFileHandle);
                 updateConnectionDataFileHandle(item.dataFileHandle);
@@ -61,13 +61,13 @@ export default function FileRow({
               }}
             >
               <div className="zoom">
-                <img src={item.thumbnailUrl} alt="Spectrogram Thumbnail" style={{ width: '200px', height: '100px' }} />
+                <img src={item?.thumbnailUrl} alt="Spectrogram Thumbnail" style={{ width: '200px', height: '100px' }} />
               </div>
             </Link>
           </td>
           <td className="align-middle" style={{ textAlign: 'left' }}>
             <Link
-              to={'spectrogram/' + item.name.replace('.sigmf-meta', '')}
+              to={'spectrogram/' + item?.name?.replace('.sigmf-meta', '')}
               onClick={() => {
                 updateConnectionMetaFileHandle(item.metaFileHandle);
                 updateConnectionDataFileHandle(item.dataFileHandle);
@@ -76,7 +76,7 @@ export default function FileRow({
                 updateBlobTotalIQSamples(item.lengthInIQSamples);
               }}
             >
-              <h2>{item.name.split('(slash)').slice(-1)[0].replace('.sigmf-meta', '')}</h2>
+              <h2>{item?.name?.split('(slash)').slice(-1)[0].replace('.sigmf-meta', '')}</h2>
             </Link>
             <div title={item.description}>{item.shortDescription}</div>
             {/* File download links */}
@@ -104,7 +104,7 @@ export default function FileRow({
                 updateBlobTotalIQSamples(item.lengthInIQSamples);
               }}
             >
-              <h5>{item.name.split('(slash)').slice(-1)[0].replace('.sigmf-meta', '')}</h5>
+              <h5>{item?.name?.split('(slash)').slice(-1)[0].replace('.sigmf-meta', '')}</h5>
             </Link>
           </td>
         </>

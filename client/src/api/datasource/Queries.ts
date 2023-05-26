@@ -35,7 +35,7 @@ const updateDataSourceMeta = async (type, dataSourceID, filePath, meta) => {
   return response;
 };
 
-export const getDataSources = (type) => useQuery(['datasource', type], (type) => fetchDataSources(type));
+export const getDataSources = (type) => useQuery(['datasource', type], () => fetchDataSources(type));
 export const getDataSource = (type: string, dataSourceID: string) =>
   useQuery(['datasource', type, dataSourceID], () => fetchDataSource(type, dataSourceID));
 export const getDataSourceMeta = (type: string, dataSourceID: string) =>

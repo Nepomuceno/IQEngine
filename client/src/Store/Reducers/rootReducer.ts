@@ -8,6 +8,9 @@ import connectionReducer from './ConnectionReducer';
 import fetchMetaReducer from './FetchMetaReducer';
 import recordingsListReducer from './RecordingsListReducer';
 import minimapReducer from './MinimapReducer';
+import { localDirectoryReducer } from './LocalDirectoryReducer';
+
+export type RootState = ReturnType<typeof rootReducer>;
 
 const rootReducer = combineReducers({
   blobReducer,
@@ -15,6 +18,7 @@ const rootReducer = combineReducers({
   fetchMetaReducer,
   recordingsListReducer,
   minimapReducer,
+  localDirectoryReducer,
 });
 
 export default rootReducer;
