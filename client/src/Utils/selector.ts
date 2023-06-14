@@ -146,6 +146,16 @@ function calcFftOfTile(
   };
 }
 
+export const getSHA1Hash = async (input: any) => {
+  const textAsBuffer = new TextEncoder().encode(input);
+  const hashBuffer = await window.crypto.subtle.digest("SHA-1", textAsBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hash = hashArray
+    .map((item) => item.toString(16).padStart(2, "0"))
+    .join("");
+  return hash;
+};
+
 export interface SelectFftReturn {
   imageData: any;
   autoMax: number;

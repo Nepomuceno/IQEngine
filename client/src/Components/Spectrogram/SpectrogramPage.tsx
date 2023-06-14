@@ -27,6 +27,7 @@ import { IQDataSlice } from '@/api/Models';
 import { useInterval } from 'usehooks-ts';
 import { python } from '@codemirror/lang-python';
 import { applyProcessing } from '@/Sources/FetchMoreDataSource';
+import { useSpectrogram } from './hooks'
 
 declare global {
   interface Window {
@@ -47,24 +48,27 @@ export const SpectrogramPage = () => {
   const marginTop = 30;
   const { type, account, container, filePath, sasToken } = useParams();
 
-  const handleNewSlice = (newSlice: IQDataSlice) => {
-    setDownloadedTiles((oldTiles) => {
-      oldTiles.push(newSlice.index);
-      return oldTiles;
-    });
-  };
+  // const handleNewSlice = (newSlice: IQDataSlice) => {
+  //   setDownloadedTiles((oldTiles) => {
+  //     oldTiles.push(newSlice.index);
+  //     return oldTiles;
+  //   });
+  // };
   const imgRef = useRef<HTMLImageElement>(null);
   const imgRef2 = useRef<HTMLImageElement>(null);
 
+  const metaQuery = getMeta(type, account, container, filePath);
+  const [meta, setMeta] = useState<SigMFMetadata>(metaQuery.data);
+  const { upperTile, lowerTile, taps, windowFunction,pythonSnippet, magnitudeMin, magnitudeMax,
+     setLowerTile, setUpperTile, setTaps, setWindowFunction, setPythonSnippet,
+     fftSize, setFFTSize,
+     pyodide, setPyodide, setMagnitudeMin, setMagnitudeMax,
+     processedIQData,
+    imageBitmap} = useSpectrogram(meta);
+
   // FFT Properties
-  const [fftSize, setFFTSize] = useState(1024);
-  const [magnitudeMax, setMagnitudeMax] = useState(240);
-  const [magnitudeMin, setMagnitudeMin] = useState(80);
-  const [fftWindow, setFFTWindow] = useState('hamming');
   const [autoscale, setAutoscale] = useState(false);
   const [image, setImage] = useState(null);
-  const [upperTile, setUpperTile] = useState(-1);
-  const [lowerTile, setLowerTile] = useState(-1);
   const [currentSamples, setCurrentSamples] = useState<Float32Array>(Float32Array.from([]));
   const [spectrogramHeight, setSpectrogramHeight] = useState(800);
   const [spectrogramWidth, setSpectrogramWidth] = useState(1000);
@@ -74,7 +78,6 @@ export const SpectrogramPage = () => {
   const [currentFftMax, setCurrentFftMax] = useState(-999999);
   const [currentFftMin, setCurrentFftMin] = useState(999999);
   const [currentTab, setCurrentTab] = useState('spectrogram');
-  const [pyodide, setPyodide] = useState(null);
   const [handleTop, setHandleTop] = useState(0);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [downloadedTiles, setDownloadedTiles] = useState([]);
@@ -82,21 +85,20 @@ export const SpectrogramPage = () => {
   const [plotWidth, setPlotWidth] = useState(0);
   const [plotHeight, setPlotHeight] = useState(0);
   const [missingTiles, setMissingTiles] = useState([]);
-  const metaQuery = getMeta(type, account, container, filePath);
+  
   const tiles = range(Math.floor(lowerTile), Math.ceil(upperTile));
   const [fftData, setfftData] = useState<Record<number, Uint8ClampedArray>>({});
-  const [meta, setMeta] = useState<SigMFMetadata>(metaQuery.data);
-  const [taps, setTaps] = useState<number[]>([1]);
-  const [pythonSnippet, setPythonSnippet] = useState(INITIAL_PYTHON_SNIPPET);
-  const [fetchMinimap, setFetchMinimap] = useState(false);
-  const [iqDataProcessed, setIqData] = useState<Record<number, Float32Array>>({});
-  const iqffts = getIQDataSlices(
-    metaQuery.data,
-    tiles,
-    handleNewSlice,
-    TILE_SIZE_IN_IQ_SAMPLES,
-    !!metaQuery.data && tiles.length > 0
-  );
+  const [fetchMinimap, setFetchMinimap] = useState(true);
+
+  
+
+  // const iqffts = getIQDataSlices(
+  //   metaQuery.data,
+  //   tiles,
+  //   handleNewSlice,
+  //   TILE_SIZE_IN_IQ_SAMPLES,
+  //   !!metaQuery.data && tiles.length > 0
+  // );
 
   useEffect(() => {
     window.addEventListener('resize', windowResized);
@@ -110,113 +112,105 @@ export const SpectrogramPage = () => {
     };
   }, []);
 
-  const iqData = useMemo(() => {
-    return iqffts
-      .map((slice) => slice.data)
-      .filter((data) => data !== null)
-      .reduce((acc, data) => {
-        if (!data) {
-          return acc;
-        }
-        // TODO: Add back data transformation once we find out how to pass through the performance provblems it is getting now.
-        // let dataTransformed = applyProcessing(data.iqArray, taps, pythonSnippet, pyodide);
-        acc[data.index] = data.iqArray;
-        return acc;
-      }, {});
-  }, [
-    iqffts.reduce((acc, item) => {
-      if (item.data) {
-        return [acc, item.data.index].join(',');
-      } else {
-        return acc;
-      }
-    }, '') ?? '',
-    fftSize,
-    magnitudeMax,
-    magnitudeMin,
-    fftWindow,
-    zoomLevel,
-    lowerTile,
-    upperTile,
-    missingTiles,
-    downloadedTiles,
-    pyodide,
-    pythonSnippet,
-    taps,
-  ]);
+  // const iqData = useMemo(() => {
+  //   return iqffts
+  //     .map((slice) => slice.data)
+  //     .filter((data) => data !== null)
+  //     .reduce((acc, data) => {
+  //       if (!data) {
+  //         return acc;
+  //       }
+  //       // TODO: Add back data transformation once we find out how to pass through the performance provblems it is getting now.
+  //       // let dataTransformed = applyProcessing(data.iqArray, taps, pythonSnippet, pyodide);
+  //       acc[data.index] = data.iqArray; //dataTransformed;
+  //       return acc;
+  //     }, {});
+  // }, [
+  //   iqffts.reduce((acc, item) => {
+  //     if (item.data) {
+  //       return [acc, item.data.index].join(',');
+  //     } else {
+  //       return acc;
+  //     }
+  //   }, '') ?? '',
+  //   downloadedTiles,
+  //   pyodide,
+  //   pythonSnippet,
+  //   taps,
+  // ]);
 
-  const fftReturned = useMemo(() => {
-    if (!meta || lowerTile < 0 || upperTile < 0) {
-      return null;
-    }
-    console.debug('Dependencies changed, recalculating FFT', {
-      iqData,
-      fftSize,
-      magnitudeMax,
-      magnitudeMin,
-      fftWindow,
-      zoomLevel,
-      lowerTile,
-      upperTile,
-      missingTiles,
-    });
+  // const fftReturned = useMemo(() => {
+  //   if (!meta || lowerTile < 0 || upperTile < 0) {
+  //     return null;
+  //   }
+  //   console.debug('Dependencies changed, recalculating FFT', {
+  //     iqData,
+  //     fftSize,
+  //     magnitudeMax,
+  //     magnitudeMin,
+  //     windowFunction,
+  //     zoomLevel,
+  //     lowerTile,
+  //     upperTile,
+  //     missingTiles,
+  //   });
 
-    // Update the image (eventually this should get moved somewhere else)
-    let ret = selectFft(
-      lowerTile,
-      upperTile,
-      fftSize,
-      magnitudeMax,
-      magnitudeMin,
-      meta,
-      fftWindow, // dont want to conflict with the main window var
-      currentFftMax,
-      currentFftMin,
-      autoscale,
-      zoomLevel,
-      iqData,
-      fftData
-    );
-    return { ret, fftData };
-  }, [
-    downloadedTiles.length,
-    fftSize,
-    magnitudeMax,
-    magnitudeMin,
-    fftWindow,
-    zoomLevel,
-    lowerTile,
-    upperTile,
-    missingTiles.length,
-    fftData,
-  ]);
+  //   // Update the image (eventually this should get moved somewhere else)
+  //   let ret = selectFft(
+  //     lowerTile,
+  //     upperTile,
+  //     fftSize,
+  //     magnitudeMax,
+  //     magnitudeMin,
+  //     meta,
+  //     windowFunction, // dont want to conflict with the main window var
+  //     currentFftMax,
+  //     currentFftMin,
+  //     autoscale,
+  //     zoomLevel,
+  //     iqData,
+  //     fftData
+  //   );
+  //   return { ret, fftData };
+  // }, [
+  //   downloadedTiles.length,
+  //   fftSize,
+  //   magnitudeMax,
+  //   magnitudeMin,
+  //   windowFunction,
+  //   zoomLevel,
+  //   lowerTile,
+  //   upperTile,
+  //   missingTiles.length,
+  //   fftData,
+  // ]);
 
   useEffect(() => {
     setfftData({});
-  }, [fftSize, magnitudeMax, magnitudeMin, fftWindow]);
+  }, [fftSize, magnitudeMax, magnitudeMin, windowFunction]);
 
-  useEffect(() => {
-    renderImage();
-  }, [fftReturned]);
+  // useEffect(() => {
+  //   renderImage();
+  // }, [fftReturned]);
 
-  const renderImage = async () => {
-    if (!fftReturned) {
-      return;
-    }
-    createImageBitmap(fftReturned.ret.imageData).then((imageBitmap) => {
-      setImage(imageBitmap);
-    });
-    if (autoscale && fftReturned.ret.autoMax) {
-      console.debug('New max/min:', fftReturned.ret.autoMax, fftReturned.ret.autoMin);
-      setAutoscale(false); // toggles it off so this only will happen once
-      setMagnitudeMax(fftReturned.ret.autoMax);
-      setMagnitudeMin(fftReturned.ret.autoMin);
-    }
-    setCurrentFftMax(fftReturned.ret.currentFftMax);
-    setCurrentFftMin(fftReturned.ret.currentFftMin);
-    setMissingTiles(fftReturned.ret.missingTiles);
-    setFetchMinimap(true);
-  };
+  // const renderImage = async () => {
+  //   if (!fftReturned) {
+  //     return;
+  //   }
+  //   createImageBitmap(fftReturned.ret.imageData).then((imageBitmap) => {
+  //     setImage(imageBitmap);
+  //   });
+  //   if (autoscale && fftReturned.ret.autoMax) {
+  //     console.debug('New max/min:', fftReturned.ret.autoMax, fftReturned.ret.autoMin);
+  //     setAutoscale(false); // toggles it off so this only will happen once
+  //     setMagnitudeMax(fftReturned.ret.autoMax);
+  //     setMagnitudeMin(fftReturned.ret.autoMin);
+  //   }
+  //   setCurrentFftMax(fftReturned.ret.currentFftMax);
+  //   setCurrentFftMin(fftReturned.ret.currentFftMin);
+  //   setMissingTiles(fftReturned.ret.missingTiles);
+  //   setFetchMinimap(true);
+  // };
 
   // useInterval(() => {
   //   if (missingTiles.length > 0) {
@@ -317,8 +311,8 @@ export const SpectrogramPage = () => {
     let currentSamples = new Float32Array(bufferLen);
     let counter = 0;
     for (let tile of tiles) {
-      if (iqData[tile] !== undefined) {
-        currentSamples.set(iqData[tile], counter);
+      if (processedIQData[tile] !== undefined) {
+        currentSamples.set(processedIQData[tile].data, counter);
       } else {
         console.debug('Dont have iqData of tile', tile, 'yet');
       }
@@ -354,7 +348,7 @@ export const SpectrogramPage = () => {
             updateMagnitudeMax={setMagnitudeMax}
             updateMagnitudeMin={setMagnitudeMin}
             updateFftsize={setFFTSize}
-            updateWindowChange={setFFTWindow}
+            updateWindowChange={windowFunction}
             magnitudeMax={magnitudeMax}
             magnitudeMin={magnitudeMin}
             handleAutoScale={setAutoscale}
@@ -445,7 +439,7 @@ export const SpectrogramPage = () => {
                   <div className="flex flex-row">
                     <Stage width={spectrogramWidth} height={spectrogramHeight}>
                       <Layer>
-                        <Image image={image} x={0} y={0} width={spectrogramWidth} height={spectrogramHeight} />
+                        <Image image={imageBitmap} x={0} y={0} width={spectrogramWidth} height={spectrogramHeight} />
                       </Layer>
                       <AnnotationViewer
                         meta={meta}

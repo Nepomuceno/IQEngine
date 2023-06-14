@@ -163,9 +163,9 @@ print("Time elapsed:", (time.time() - start_t)*1e3, "ms")`,
         </label>
 
         <DualRangeSlider
-          min={0}
+          min={-50}
           minValue={magnitudeMin}
-          max={255}
+          max={50}
           maxValue={magnitudeMax}
           onChangeMin={onChangeMagnitudeMin}
           onChangeMax={onChangeMagnitudeMax}
@@ -205,7 +205,7 @@ print("Time elapsed:", (time.time() - start_t)*1e3, "ms")`,
         </div>
       </div>
       {/* TODO: Reenable this when we found out how to avoid the performance problems. */}
-      {false && (
+      {true && (
         <>
           <div className="mb-3" id="formTaps">
             <label className="label">
@@ -306,7 +306,7 @@ print("Time elapsed:", (time.time() - start_t)*1e3, "ms")`,
         </label>
       </div>
       {/* TODO: Reenable this when we found out how to avoid the performance problems. */}
-      {false && (
+      {true && (
         <div className="mb-3" id="formPythonSnippet">
           <label className="label">
             <span className="label-text text-base">Python Snippet</span>
