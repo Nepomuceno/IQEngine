@@ -2,7 +2,7 @@ from enum import Enum
 
 from pydantic import SecretStr
 
-from .cipher import decrypt
+from helpers.cipher import decrypt
 
 
 class apiType(Enum):
