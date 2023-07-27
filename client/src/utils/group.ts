@@ -1,22 +1,22 @@
-export function groupContingousIndexes(indexes: number[]) {
-  const contigousIndexes: { start: number; count: number }[] = [];
+export function groupContinguousIndexes(indexes: number[]) {
+  const contiguousIndexes: { start: number; count: number }[] = [];
   if (indexes.length === 0) {
-    return contigousIndexes;
+    return contiguousIndexes;
   }
   indexes.sort((a, b) => a - b);
   for (let i = 0; i < indexes.length; i++) {
     const index = indexes[i];
     if (i === 0) {
-      contigousIndexes.push({ start: index, count: 1 });
+      contiguousIndexes.push({ start: index, count: 1 });
     } else {
-      const lastContigousIndex = contigousIndexes[contigousIndexes.length - 1];
-      if (lastContigousIndex.start + lastContigousIndex.count === index) {
-        lastContigousIndex.count++;
+      const lastContiguousIndex = contiguousIndexes[contiguousIndexes.length - 1];
+      if (lastContiguousIndex.start + lastContiguousIndex.count === index) {
+        lastContiguousIndex.count++;
       } else {
-        contigousIndexes.push({ start: index, count: 1 });
+        contiguousIndexes.push({ start: index, count: 1 });
       }
     }
   }
 
-  return contigousIndexes;
+  return contiguousIndexes;
 }

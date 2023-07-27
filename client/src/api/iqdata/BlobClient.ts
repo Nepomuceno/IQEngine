@@ -4,7 +4,7 @@ import { getBlobClient } from '@/api/utils/AzureBlob';
 import { SigMFMetadata } from '@/utils/sigmfMetadata';
 import { DataSource, IQDataSlice } from '@/api/Models';
 import { BlobClient as AzureBlobClient } from '@azure/storage-blob';
-import { groupContingousIndexes } from '@/utils/group';
+import { groupContinguousIndexes } from '@/utils/group';
 
 export class BlobClient implements IQDataClient {
   dataSources: Record<string, DataSource>;
@@ -19,7 +19,7 @@ export class BlobClient implements IQDataClient {
     signal: AbortSignal
   ): Promise<IQDataSlice[]> {
     console.debug('getIQDataBlocks', indexes);
-    const contingousIndexes = groupContingousIndexes(indexes);
+    const contingousIndexes = groupContinguousIndexes(indexes);
     let { account, container, file_path } = meta.getOrigin();
     // if filePath does not finish in .sigmf-data, add it
     if (!file_path.endsWith('.sigmf-data')) {
