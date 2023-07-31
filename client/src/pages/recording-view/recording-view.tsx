@@ -6,15 +6,13 @@ import { useGetImage } from './hooks/use-get-image';
 import { KonvaEventObject } from 'konva/lib/Node';
 import { RulerTop } from './components/ruler-top';
 import { RulerSide } from './components/ruler-side';
-import { MINIMAP_FFT_SIZE } from '@/utils/constants';
+import { useMeta } from '@/api/metadata/queries';
+import { useSpectrogramContext, SpectrogramContextProvider } from './hooks/use-spectrogram-context';
 
-export function RecordingViewPage() {
-  const { type, account, container, filePath } = useParams();
-  const [spectrogramWidth, setSpectrogramWidth] = useState<number>(1024);
-  const [magnitudeMin, setMagnitudeMin] = useState<number>(-50);
-  const [magnitudeMax, setMagnitudeMax] = useState<number>(100);
-  const [colmap, setColmap] = useState<string>('viridis');
-  const [windowFunction, setWindowFunction] = useState<string>('square');
+function SpectrogramView() {
+  const { type, account, container, filePath, spectrogramWidth, magnitudeMin, magnitudeMax, colmap, windowFunction } =
+    useSpectrogramContext();
+
   const {
     currentData,
     displayedIQ,
@@ -36,7 +34,11 @@ export function RecordingViewPage() {
     spectrogramHeight: 800,
     fftSize: 1024,
   });
-
+  useEffect(() => {
+    if (displayedIQ && displayedIQ.length > 0) {
+      setIQData(displayedIQ);
+    }
+  }, [displayedIQ]);
   const { image, setIQData } = useGetImage(
     fftSize,
     spectrogramHeight,
@@ -54,12 +56,50 @@ export function RecordingViewPage() {
       setCurrentFFT((current) => Math.max(0, current - evt.evt.deltaY / 10));
     }
   }
+  return (
+    <>
+      <Stage width={spectrogramWidth + 110} height={30}>
+        <RulerTop
+          sampleRate={meta.getSampleRate()}
+          spectrogramWidth={spectrogramWidth}
+          spectrogramWidthScale={spectrogramWidth / fftSize}
+          includeRfFreq={false}
+          coreFrequency={meta.getCenterFrequency()}
+        />
+      </Stage>
+      <div className="flex flex-row">
+        <Stage width={spectrogramWidth} height={spectrogramHeight}>
+          <Layer onWheel={handleWheel}>
+            <Image image={image} x={0} y={0} width={1024} height={spectrogramHeight} />
+          </Layer>
+        </Stage>
+        <Stage width={50} height={spectrogramHeight} className="mr-1">
+          <RulerSide
+            spectrogramWidth={spectrogramWidth}
+            fftSize={fftSize}
+            sampleRate={meta?.getSampleRate()}
+            currentRowAtTop={currentFFT / fftSize}
+            spectrogramHeight={spectrogramHeight}
+          />
+        </Stage>
+      </div>
+      {currentData && (
+        <div>
+          <h2>Current Data</h2>
+          <div>FFT Size: {fftSize}</div>
+          <div>Spectrogram Height: {spectrogramHeight}</div>
+          <div>Current IQ: {currentData?.length}</div>
+          <div>Displayed IQs: {displayedIQ?.length}</div>
+          <div>Current FFT: {currentFFT}</div>
+        </div>
+      )}
+    </>
+  );
+}
 
-  useEffect(() => {
-    if (displayedIQ && displayedIQ.length > 0) {
-      setIQData(displayedIQ);
-    }
-  }, [displayedIQ]);
+export function RecordingViewPage() {
+  const { type, account, container, filePath } = useParams();
+  const { data: meta } = useMeta(type, account, container, filePath);
 
   if (!meta) {
     return (
@@ -69,55 +109,23 @@ export function RecordingViewPage() {
     );
   }
   return (
-    <div className="mb-0 ml-0 mr-0 p-0 pt-3">
-      <div className="p-0 ml-0 mr-0 mb-0 mt-2">
-        <div className="flex flex-col pl-3">
-          <Stage width={spectrogramWidth + 110} height={30}>
-            <RulerTop
-              sampleRate={meta.getSampleRate()}
-              spectrogramWidth={spectrogramWidth}
-              spectrogramWidthScale={spectrogramWidth / fftSize}
-              includeRfFreq={false}
-              coreFrequency={meta.getCenterFrequency()}
-            />
-          </Stage>
-          <div className="flex flex-row">
-            <Stage width={spectrogramWidth} height={spectrogramHeight}>
-              <Layer onWheel={handleWheel}>
-                <Image image={image} x={0} y={0} width={1024} height={spectrogramHeight} />
-              </Layer>
-            </Stage>
-            <Stage width={50} height={spectrogramHeight} className="mr-1">
-              <RulerSide
-                spectrogramWidth={spectrogramWidth}
-                fftSize={fftSize}
-                sampleRate={meta?.getSampleRate()}
-                currentRowAtTop={currentFFT / fftSize}
-                spectrogramHeight={spectrogramHeight}
-              />
-            </Stage>
+    <SpectrogramContextProvider account={account} container={container} filePath={filePath} type={type}>
+      <div className="mb-0 ml-0 mr-0 p-0 pt-3">
+        <div className="p-0 ml-0 mr-0 mb-0 mt-2">
+          <div className="flex flex-col pl-3">
+            <SpectrogramView />
           </div>
         </div>
+        <div className="flex">
+          {meta && (
+            <div>
+              <h2>Metadata</h2>
+              <div>Sample Rate: {meta.getSampleRate()}</div>
+              <div>Number of Samples: {meta.getTotalSamples()}</div>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex">
-        {meta && (
-          <div>
-            <h2>Metadata</h2>
-            <div>Sample Rate: {meta.getSampleRate()}</div>
-            <div>Number of Samples: {meta.getTotalSamples()}</div>
-          </div>
-        )}
-        {currentData && (
-          <div>
-            <h2>Current Data</h2>
-            <div>FFT Size: {fftSize}</div>
-            <div>Spectrogram Height: {spectrogramHeight}</div>
-            <div>Current IQ: {currentData?.length}</div>
-            <div>Displayed IQs: {displayedIQ?.length}</div>
-            <div>Current FFT: {currentFFT}</div>
-          </div>
-        )}
-      </div>
-    </div>
+    </SpectrogramContextProvider>
   );
 }
